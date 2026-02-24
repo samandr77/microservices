@@ -1,0 +1,58 @@
+include:
+    - project: 'templates/ci-cd'
+      ref: master
+      file:
+      - 'main.yml'
+      - 'qa/qa-gitlab-ci.yml'
+
+
+#run-tests:
+#  stage: Autotesting
+#  image: golang:1.23
+#  tags:
+#    - build-docker
+#  script:
+#    - cd app && CGO_ENABLED=1 go test -v -race ./...
+
+run-build:
+  stage: Build
+  image: golang:1.23
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  tags:
+    - build-docker
+  artifacts:
+     name: $CI_COMMIT_REF_SLUG
+     paths:
+     - ./app/main
+     expire_in: 1 week
+  script:
+    - cd app && go build ./cmd/main.go
+
+Deploy for stable dev:
+  stage: Staging
+  environment:
+    name: stable-dev
+    url: https://gateway.blago.dev.buroburo.tech/notification
+    auto_stop_in: 1 day
+  tags:
+    - blago_stable_dev_shell
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^(release|epic|hotfix|infr).*$/'
+      when: always
+    - if: '$CI_COMMIT_BRANCH =~ /^(develop|release).*$/'
+      when: always
+      allow_failure: true
+    - if: '$CI_COMMIT_BRANCH =~ /^(infr|feature|fix|hotfix|epic).*$/'
+      when: manual
+      allow_failure: true
+    - when: never
+  before_script:
+    - cp -f $ENVS $SERVICE_DIR/envs/notification.env
+  script:
+    - cd docker
+    - docker build -f ./Dockerfile -t blago-notification-dev:latest ..
+    - docker stop blago-notification-dev || true
+    - docker rm blago-notification-dev || true
+    - docker run -p 0.0.0.0:38400:8080 -d --env-file=$SERVICE_DIR/envs/notification.env -v $SERVICE_DIR/certs:/app/certs --name blago-notification-dev --network microservices_kong-net --restart=always blago-notification-dev:latest

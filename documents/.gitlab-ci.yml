@@ -1,0 +1,74 @@
+include:
+    - project: 'templates/ci-cd'
+      ref: master
+      file: 'main.yml'
+
+run-linter:
+  stage: Linting
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golangci/golangci-lint:v1.61.0-alpine
+  tags:
+    - build-docker
+  script:
+    - cd app && golangci-lint run -v ./...
+
+run-tests:
+  stage: Autotesting
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golang:1.23
+  tags:
+    - build-docker
+  services:
+    - postgres:16.3-alpine
+  variables:
+    TEST_POSTGRES_DSN: postgres://postgres:dev@postgres:5432/postgres?sslmode=disable
+    POSTGRES_PASSWORD: dev
+    TZ: Europe/Moscow
+  before_script:
+    - go install github.com/pressly/goose/v3/cmd/goose@latest
+    - goose -dir ./app/migrations postgres "$TEST_POSTGRES_DSN" up
+  script:
+      - cd app && CGO_ENABLED=1 go test -v -race ./...
+
+run-build:
+  stage: Build
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golang:1.23
+  tags:
+    - build-docker
+  script:
+    - cd app && go build ./cmd/main.go
+
+Deploy for stable dev:
+  stage: Staging
+  environment:
+    name: stable-dev
+    url: https://gateway.russ.dev.buroburo.tech/documents
+    auto_stop_in: 1 day
+  tags:
+    - russ_stable_dev_runner
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^(release|epic|hotfix|infr).*$/'
+      when: never
+    - if: '$CI_COMMIT_BRANCH =~ /^(develop|release).*$/'
+      when: always
+      allow_failure: true
+    - if: '$CI_COMMIT_BRANCH =~ /^(infr|feature|fix|hotfix|epic).*$/'
+      when: manual
+      allow_failure: true
+    - when: never
+  before_script:
+    - cp -f $ENVS $ENVS_DIR/documents.env
+  script:
+    - cd docker
+    - docker build -f ./Dockerfile -t russ-documents-dev:latest ..
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker stop russ-documents-dev || true
+    - docker rm russ-documents-dev || true
+    - docker run -p 127.0.0.1:38430:8080 -d --env-file=$ENVS_DIR/documents.env --name russ-documents-dev --network russ-microservices_kong-net --restart=always russ-documents-dev:latest

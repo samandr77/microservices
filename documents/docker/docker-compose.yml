@@ -1,0 +1,37 @@
+name: russ-documents
+services:
+  pg:
+    image: postgres:16.3-alpine
+    container_name: documents-pg
+    environment:
+      TZ: UTC
+      POSTGRES_PASSWORD: dev
+    ports:
+      - "15436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - "pg-documents:/var/lib/postgresql/data"
+    restart: always
+  documents:
+    container_name: documents
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      pg:
+        condition: service_healthy
+    environment:
+      TZ: UTC
+    env_file:
+      - path: "../docker-example.env"
+        required: false
+    restart: always
+
+volumes:
+  pg-documents:

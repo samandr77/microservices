@@ -1,0 +1,840 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is an API for client management.",
+        "title": "Documents API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/documents": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает документ по ID клиента",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Документ",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID клиента",
+                        "name": "clientId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization:{accessToken}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.DocumentsByClientIDRequest"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные параметры запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Документа для данного клиента не существует",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/documents/details": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает детали документа",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Детали документа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID документа",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization:{accessToken}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Document"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные параметры запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Документа c таким ID не существует",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/documents/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Скачивает документ с указанным ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Скачивание документа",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID документа",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization:{accessToken}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF документ",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Документа c таким ID не существует",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/documents/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает список документов для клиента",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Список документов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID клиента",
+                        "name": "clientId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Лимит документов",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "name",
+                            "doc_type",
+                            "created_at"
+                        ],
+                        "type": "string",
+                        "description": "Сортировка документов",
+                        "name": "sortBy",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Направление сортировки, ASC или DESC",
+                        "name": "orderBy",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization:{accessToken}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.GetDocumentsListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные параметры запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Документов для этого клиента не существует",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/getDocuments": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Создает закрывающие документы за указанный период для клиента",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Создание закрывающих документов",
+                "parameters": [
+                    {
+                        "description": "Параметры закрывающих документов",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreatClosingDocumentsRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization:{accessToken}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Закрывающие документы успешно созданы",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Данных не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Возвращает статус работы сервиса",
+                "tags": [
+                    "health"
+                ],
+                "summary": "Проверка состояния сервиса",
+                "responses": {
+                    "200": {
+                        "description": "Сервис работает!",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Сервис не работает",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/oferta": {
+            "post": {
+                "description": "Создает новую оферту для клиента",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oferta"
+                ],
+                "summary": "Создание оферты",
+                "parameters": [
+                    {
+                        "description": "Параметры оферты",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateOfertaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Оферта успешно создана",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateOfertaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "409": {
+                        "description": "Оферта уже существует",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/oferta/sign": {
+            "put": {
+                "description": "Изменяет статус оферты на подписанный",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "oferta"
+                ],
+                "summary": "Подписание оферты",
+                "parameters": [
+                    {
+                        "description": "Параметры для подписи оферты",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SignOfertaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Статус оферты успешно изменен",
+                        "schema": {
+                            "$ref": "#/definitions/api.SignOfertaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "Оферта не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/act/callback": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Обрабатывает коллбэк с данными закрывающих документов",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "documents"
+                ],
+                "summary": "Обработка закрывающих документов",
+                "parameters": [
+                    {
+                        "description": "Данные закрывающих документов",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entity.ClosingDocuments"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authorization:{accessToken}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Документы успешно обработаны",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.CreatClosingDocumentsRequest": {
+            "type": "object",
+            "properties": {
+                "clientID": {
+                    "type": "string"
+                },
+                "dateFrom": {
+                    "type": "string"
+                },
+                "dateTo": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateOfertaRequest": {
+            "type": "object",
+            "properties": {
+                "clientId": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "oneCguid": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateOfertaResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.DocumentsByClientIDRequest": {
+            "type": "object",
+            "properties": {
+                "clientId": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "docType": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "oneCGuid": {
+                    "type": "string"
+                },
+                "signedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "sum": {
+                    "type": "number"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.GetDocumentsListResponse": {
+            "type": "object",
+            "properties": {
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.Document"
+                    }
+                },
+                "totalDocuments": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.ResponseError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SignOfertaRequest": {
+            "type": "object",
+            "properties": {
+                "clientID": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SignOfertaResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.ActInfo": {
+            "type": "object",
+            "properties": {
+                "actDate": {
+                    "type": "string"
+                },
+                "actNumber": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.ClosingDocuments": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.ClosingDocumentsData"
+                    }
+                },
+                "guid": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.ClosingDocumentsData": {
+            "type": "object",
+            "properties": {
+                "actInfo": {
+                    "$ref": "#/definitions/entity.ActInfo"
+                },
+                "invoiceInfo": {
+                    "$ref": "#/definitions/entity.InvoiceInfo"
+                },
+                "occassion": {
+                    "type": "string"
+                },
+                "servicesList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/entity.ServicesList"
+                    }
+                }
+            }
+        },
+        "entity.DocStatus": {
+            "type": "string",
+            "enum": [
+                "created",
+                "signed"
+            ],
+            "x-enum-varnames": [
+                "DocStatusCreated",
+                "DocStatusSigned"
+            ]
+        },
+        "entity.DocType": {
+            "type": "string",
+            "enum": [
+                "oferta",
+                "upd"
+            ],
+            "x-enum-varnames": [
+                "DocTypeOferta",
+                "DocTypeUPD"
+            ]
+        },
+        "entity.Document": {
+            "type": "object",
+            "properties": {
+                "clientID": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/entity.ClosingDocumentsData"
+                },
+                "docType": {
+                    "$ref": "#/definitions/entity.DocType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "oneCGuid": {
+                    "type": "string"
+                },
+                "signedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/entity.DocStatus"
+                },
+                "sum": {
+                    "type": "number"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.InvoiceInfo": {
+            "type": "object",
+            "properties": {
+                "invoiceDate": {
+                    "type": "string"
+                },
+                "invoiceNumber": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.ServicesList": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "taxAmount": {
+                    "type": "number"
+                },
+                "taxRate": {
+                    "type": "string"
+                },
+                "totalAmount": {
+                    "type": "number"
+                },
+                "unitPrice": {
+                    "type": "number"
+                },
+                "units": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

@@ -1,0 +1,29 @@
+name: !reset null
+
+services:
+  notification:
+    ports: !override
+      - "${PORT:-8082}:8082"
+    container_name: !reset null
+    networks:
+      - blago-notification
+    environment:
+      - HTTP_PORT=${HTTP_PORT}
+      - MAILER_HOST=${MAILER_HOST}
+      - MAILER_PORT=${MAILER_PORT}
+      - MAILER_ENCRYPTION=${MAILER_ENCRYPTION}
+      - MAILER_FROM=${MAILER_FROM}
+      - MAILER_FROM_NAME=${MAILER_FROM_NAME}
+      - MAILER_LOGIN=${MAILER_LOGIN}
+      - MAILER_PASSWORD=${MAILER_PASSWORD}
+      - TLS_SERVER_CERT=/app/certs/server.crt
+      - TLS_SERVER_KEY=/app/certs/server.key
+      - TLS_CLIENT_CERT=/app/certs/client.key
+      - TLS_CLIENT_KEY=/app/certs/client.key
+      - TLS_CA_CERT=/app/certs/ca.crt
+      - MTLS_ENABLED=${MTLS_ENABLED}
+    volumes:
+      - ${CERT_PATH:../certs}:/app/certs:ro
+
+networks:
+  blago-notification:

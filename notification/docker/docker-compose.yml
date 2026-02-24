@@ -1,0 +1,18 @@
+name: blago-notification
+
+services:
+  notification:
+    container_name: notification
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      TZ: UTC
+    env_file:
+      - path: "../docker-example.env"
+        required: false
+    volumes:
+      - ../certs:/app/certs:ro
+    restart: always
