@@ -1,4 +1,17 @@
-.idea
-.env
-certs/
+# macOS
+.DS_Store
 
+# IDE
+.idea/
+.vscode/
+
+# Environment variables
+.env
+*.env
+
+# Go
+*.test
+*.out
+
+# Logs
+*.log
