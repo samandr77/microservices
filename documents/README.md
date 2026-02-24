@@ -1,93 +1,162 @@
-# russ-service-template
+# 📄 Documents Service
 
+Сервис управления документами и файлами.
 
+## Описание
 
-## Getting started
+Documents Service обеспечивает работу с документами клиентов, их хранение в S3, интеграцию с 1С и управление кампаниями. Предоставляет единый интерфейс для работы с файлами и документами в системе.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Основные возможности
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- **Управление документами клиентов** - CRUD операции с документами
+- **Интеграция с S3** - Надежное хранение файлов в объектном хранилище
+- **Интеграция с 1С** - Синхронизация с системой учета
+- **Работа с кампаниями** - Управление маркетинговыми кампаниями
+- **HTTP клиенты** - Взаимодействие с внешними системами (Roback, 1C, Campaigns)
+- **Event-driven архитектура** - Асинхронная обработка через Kafka
+- **PostgreSQL + Kafka** - Надежное хранение и обработка событий
 
-## Add your files
+## Технологии
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- **Go** 1.23.1
+- **PostgreSQL** - основное хранилище метаданных
+- **Kafka** - асинхронная коммуникация
+- **S3** - хранение файлов
+- **HTTP/REST API** - основной интерфейс
+
+## Структура проекта
 
 ```
-cd existing_repo
-git remote add origin git@github.com:samandr77/microservices.git
-git branch -M master
-git push -uf origin master
+documents/
+├── app/
+│   ├── cmd/              # Точка входа приложения
+│   ├── internal/         # Внутренняя логика
+│   │   ├── api/          # HTTP handlers и роутинг
+│   │   ├── httpclients/  # HTTP клиенты
+│   │   │   ├── campaigns/# Клиент для работы с кампаниями
+│   │   │   ├── clients/  # Клиент пользователей
+│   │   │   ├── onec/     # Клиент 1С
+│   │   │   ├── roback/   # Клиент Roback
+│   │   │   └── s3/       # Клиент S3
+│   │   ├── entity/       # Бизнес-сущности
+│   │   ├── repository/   # Работа с БД
+│   │   └── service/      # Бизнес-логика
+│   ├── migrations/       # SQL миграции
+│   └── pkg/             # Переиспользуемые пакеты
+└── docker/              # Docker конфигурация
 ```
 
-## Integrate with your tools
+## Запуск
 
-- [ ] [Set up project integrations](https://github.com/samandr77/microservices/settings)
+### Локальная разработка
 
-## Collaborate with your team
+1. Настройте переменные окружения:
+```bash
+cp example.env .env
+# Отредактируйте .env файл
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+2. Запустите зависимости (PostgreSQL, Kafka, S3):
+```bash
+cd docker
+docker-compose up -d
+```
 
-## Test and Deploy
+3. Примените миграции:
+```bash
+cd app
+make migrate-up
+```
 
-Use the built-in continuous integration in GitLab.
+4. Запустите сервис:
+```bash
+make run
+```
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Docker
 
-***
+```bash
+cd docker
+docker-compose up
+```
 
-# Editing this README
+## API Документация
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+После запуска Swagger документация доступна по адресу:
+```
+http://localhost:8082/swagger/index.html
+```
 
-## Suggestions for a good README
+## Конфигурация
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Основные переменные окружения:
 
-## Name
-Choose a self-explaining name for your project.
+```env
+# Server
+SERVER_PORT=8082
+LOG_LEVEL=debug
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+# PostgreSQL
+POSTGRES_DSN=postgresql://user:password@localhost:5432/documents_db
+POSTGRES_MAX_CONNS=10
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+# Kafka
+KAFKA_BROKERS=localhost:9092
+KAFKA_CONSUMER_ID=documents-service
+KAFKA_DOCUMENTS_TOPIC=documents
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+# S3
+S3_ENDPOINT=localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=documents
+S3_USE_SSL=false
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+# External Services
+ONEC_API_URL=http://1c-api:8080
+ROBACK_API_URL=http://roback-api:8080
+CAMPAIGNS_API_URL=http://campaigns-api:8080
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## Интеграции
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 1С
+Синхронизация документов с системой учета, получение и отправка данных.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### Roback
+Интеграция с системой Roback для обмена документами.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### Campaigns
+Управление документами в рамках маркетинговых кампаний.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### S3
+Хранение файлов в объектном хранилище (MinIO/AWS S3).
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+## Разработка
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+### Тестирование
 
-## License
-For open source projects, say how it is licensed.
+```bash
+make test
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Линтинг
+
+```bash
+make lint
+```
+
+### Генерация Swagger документации
+
+```bash
+make swagger
+```
+
+## Зависимости
+
+- [github.com/samandr77/microservices/client](../client) - для работы с пользователями
+- [github.com/samandr77/microservices/auth](../auth) - для авторизации
+
+## Ссылки
+
+- [Репозиторий](https://github.com/samandr77/microservices)
