@@ -1,0 +1,970 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is an API for user payments to increase their balance",
+        "title": "Payment API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/payment/api",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Health check",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "Сервис работает!",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/callbacks/card": {
+            "get": {
+                "description": "Handles a payment callback for the specified transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Handle payment callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order TxID (UUID)",
+                        "name": "orderNumber",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Signature Alias",
+                        "name": "sign_alias",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Checksum (SHA512)",
+                        "name": "checksum",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MD Order ID",
+                        "name": "mdOrder",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Operation Type",
+                        "name": "operation",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Transaction Status",
+                        "name": "status",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Callback обработан успешно",
+                        "schema": {
+                            "$ref": "#/definitions/api.CardPaymentCallbackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные параметры запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Проверка контрольной суммы не пройдена",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка обработки запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/callbacks/sbp": {
+            "post": {
+                "description": "Callback to update the SPB payment status after payment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Handle SPB callback",
+                "parameters": [
+                    {
+                        "description": "Invoice callback request",
+                        "name": "SBPCallbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SBPCallbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SBPCallbackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid json",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "payment not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/card": {
+            "post": {
+                "description": "Creates a card payment for the specified amount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Create card payment",
+                "parameters": [
+                    {
+                        "description": "Card payment creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateCardPaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateCardPaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидное тело запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Сумма должна быть отрицательной",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось создать платёж",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/invoices": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a bill invoice to increase user balance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Create invoice",
+                "parameters": [
+                    {
+                        "description": "Invoice creation request",
+                        "name": "CreateInvoiceRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateInvoiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateInvoiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Client not approved",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Action forbidden for user",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Client not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Amount must be positive",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create invoice",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/invoices/{txId}": {
+            "get": {
+                "description": "Retrieves the invoice URL associated with a transaction ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Get invoice URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID (UUID)",
+                        "name": "txId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvoiceURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "'txId' должен быть UUID",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Транзакция не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/spb": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Создать ссылку на оплату через СПБ",
+                "parameters": [
+                    {
+                        "description": "Запрос на создание СПБ-ссылки",
+                        "name": "CreateSPBLinkRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateSPBLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ссылка успешно создана",
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateSPBLinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидное тело запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "Сумма должна быть положительной",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось создать СПБ-ссылку",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/transactions/{client_id}": {
+            "get": {
+                "description": "Позволяет получить список транзакций для клиента по его уникальному идентификатору с поддержкой фильтрации, сортировки и пагинации",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Получение истории транзакций клиента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Идентификатор клиента",
+                        "name": "client_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по идентификатору транзакции",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по сумме транзакции",
+                        "name": "amount",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по дате создания транзакции (формат: YYYY-MM-DD)",
+                        "name": "createdAt",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Лимит количества транзакций на странице (по умолчанию 10)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы для пагинации (по умолчанию 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Поле для сортировки (доступны: id, amount, createdAt)",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Порядок сортировки (asc для возрастания, desc для убывания)",
+                        "name": "orderBy",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "История транзакций клиента",
+                        "schema": {
+                            "$ref": "#/definitions/api.TransactionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидное тело запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось получить историю транзакций",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/v1/onec/invoice": {
+            "post": {
+                "security": [
+                    {
+                        "APIKeyAuth": []
+                    }
+                ],
+                "description": "Callback to update the invoice status after payment",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Update invoice",
+                "parameters": [
+                    {
+                        "description": "Invoice callback request",
+                        "name": "InvoiceCallbackRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.InvoiceCallbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvoiceCallbackResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid GUID or invalid input data",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update invoice",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/private/v1/onec/invoice/file": {
+            "post": {
+                "description": "Saves the invoice URL with the specified bill number and GUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoices"
+                ],
+                "summary": "Save invoice URL",
+                "parameters": [
+                    {
+                        "description": "Invoice URL save request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SaveInvoiceURLRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SaveInvoiceURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Невалидное тело запроса",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось сохранить ссылку",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.CardPaymentCallbackResponse": {
+            "type": "object"
+        },
+        "api.CreateCardPaymentRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "api.CreateCardPaymentResponse": {
+            "type": "object",
+            "properties": {
+                "payment": {
+                    "$ref": "#/definitions/entity.CardPayment"
+                }
+            }
+        },
+        "api.CreateInvoiceRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "api.CreateInvoiceResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "clientAddress": {
+                    "type": "string"
+                },
+                "clientINN": {
+                    "type": "string"
+                },
+                "clientKPP": {
+                    "type": "string"
+                },
+                "clientMailAddress": {
+                    "type": "string"
+                },
+                "clientMailIndex": {
+                    "type": "string"
+                },
+                "clientName": {
+                    "type": "string"
+                },
+                "clientOGRN": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "payerType": {
+                    "type": "string"
+                },
+                "requisites": {
+                    "$ref": "#/definitions/entity.ClientRequisites"
+                },
+                "service": {
+                    "type": "string"
+                },
+                "txId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CreateSPBLinkRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "api.CreateSPBLinkResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/entity.SPBLink"
+                }
+            }
+        },
+        "api.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.InvoiceCallbackRequest": {
+            "type": "object",
+            "properties": {
+                "billDate": {
+                    "type": "string"
+                },
+                "billNumber": {
+                    "type": "number"
+                },
+                "guid": {
+                    "type": "string"
+                },
+                "invoiceId": {
+                    "type": "string"
+                },
+                "operationDate": {
+                    "type": "string"
+                },
+                "operationId": {
+                    "type": "string"
+                },
+                "sender": {
+                    "type": "object",
+                    "properties": {
+                        "bank": {
+                            "type": "string"
+                        },
+                        "inn": {
+                            "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "totalAmount": {
+                    "type": "number"
+                }
+            }
+        },
+        "api.InvoiceCallbackResponse": {
+            "type": "object"
+        },
+        "api.InvoiceURLResponse": {
+            "type": "object",
+            "properties": {
+                "invoiceURL": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SBPCallbackRequest": {
+            "type": "object",
+            "properties": {
+                "TaxAmount": {
+                    "description": "Units",
+                    "type": "string"
+                },
+                "amount": {
+                    "description": "Units",
+                    "type": "string"
+                },
+                "anId": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "string"
+                },
+                "paymentPurpose": {
+                    "type": "string"
+                },
+                "qrcId": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "senderBank": {
+                    "type": "string"
+                },
+                "senderInn": {
+                    "type": "string"
+                },
+                "senderName": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "trxId": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SBPCallbackResponse": {
+            "type": "object"
+        },
+        "api.SaveInvoiceURLRequest": {
+            "type": "object",
+            "properties": {
+                "billDate": {
+                    "type": "string"
+                },
+                "billNumber": {
+                    "type": "number"
+                },
+                "guid": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SaveInvoiceURLResponse": {
+            "type": "object"
+        },
+        "api.TransactionEntity": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "clientGUID": {
+                    "type": "string"
+                },
+                "clientID": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoiceURL": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "integer"
+                },
+                "paymentMethod": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "totalCount": {
+                    "type": "integer"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TransactionEntity"
+                    }
+                }
+            }
+        },
+        "entity.CardPayment": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string"
+                },
+                "orderID": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.ClientRequisites": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "bankAccountNumber": {
+                    "type": "string"
+                },
+                "bankBic": {
+                    "type": "string"
+                },
+                "bankCorrespondentAccount": {
+                    "type": "string"
+                },
+                "bankName": {
+                    "type": "string"
+                },
+                "inn": {
+                    "type": "string"
+                },
+                "kpp": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Image": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "mediaType": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.SPBLink": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "$ref": "#/definitions/entity.Image"
+                },
+                "orderId": {
+                    "type": "string"
+                },
+                "payload": {
+                    "type": "string"
+                },
+                "qrcId": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/entity.SPBPaymentStatus"
+                }
+            }
+        },
+        "entity.SPBPaymentStatus": {
+            "type": "string",
+            "enum": [
+                "NTST",
+                "RCVD",
+                "ACWP",
+                "RJCT"
+            ],
+            "x-enum-varnames": [
+                "SPBPaymentStatusNotStarted",
+                "SPBPaymentStatusStarted",
+                "SPBPaymentStatusPaid",
+                "SPBPaymentStatusRejected"
+            ]
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "X-Api-Key",
+            "in": "header"
+        },
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

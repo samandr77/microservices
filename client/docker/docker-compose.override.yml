@@ -1,0 +1,22 @@
+name: !reset null
+services:
+  pg:
+    container_name: !reset null
+    ports: !reset []
+    networks: 
+      - blago-user
+  user:
+    container_name: !reset null
+    ports: !override
+      - "${PORT}:8083"
+    networks: 
+      - blago-user
+    environment:
+      - TLS_SERVER_CERT=/app/certs/server.crt
+      - TLS_SERVER_KEY=/app/certs/server.key
+      - TLS_CA_CERT=/app/certs/ca.crt
+    volumes:
+      - ../certs:/app/certs:ro
+
+networks: 
+  blago-user:

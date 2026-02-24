@@ -1,0 +1,637 @@
+basePath: /payment/api
+definitions:
+  api.CardPaymentCallbackResponse:
+    type: object
+  api.CreateCardPaymentRequest:
+    properties:
+      amount:
+        type: number
+    type: object
+  api.CreateCardPaymentResponse:
+    properties:
+      payment:
+        $ref: '#/definitions/entity.CardPayment'
+    type: object
+  api.CreateInvoiceRequest:
+    properties:
+      amount:
+        type: number
+    type: object
+  api.CreateInvoiceResponse:
+    properties:
+      amount:
+        type: string
+      clientAddress:
+        type: string
+      clientINN:
+        type: string
+      clientKPP:
+        type: string
+      clientMailAddress:
+        type: string
+      clientMailIndex:
+        type: string
+      clientName:
+        type: string
+      clientOGRN:
+        type: string
+      number:
+        type: integer
+      payerType:
+        type: string
+      requisites:
+        $ref: '#/definitions/entity.ClientRequisites'
+      service:
+        type: string
+      txId:
+        type: string
+    type: object
+  api.CreateSPBLinkRequest:
+    properties:
+      amount:
+        type: number
+    type: object
+  api.CreateSPBLinkResponse:
+    properties:
+      data:
+        $ref: '#/definitions/entity.SPBLink'
+    type: object
+  api.ErrorResponse:
+    properties:
+      description:
+        type: string
+      message:
+        type: string
+    type: object
+  api.InvoiceCallbackRequest:
+    properties:
+      billDate:
+        type: string
+      billNumber:
+        type: number
+      guid:
+        type: string
+      invoiceId:
+        type: string
+      operationDate:
+        type: string
+      operationId:
+        type: string
+      sender:
+        properties:
+          bank:
+            type: string
+          inn:
+            type: string
+          name:
+            type: string
+        type: object
+      totalAmount:
+        type: number
+    type: object
+  api.InvoiceCallbackResponse:
+    type: object
+  api.InvoiceURLResponse:
+    properties:
+      invoiceURL:
+        type: string
+    type: object
+  api.SBPCallbackRequest:
+    properties:
+      TaxAmount:
+        description: Units
+        type: string
+      amount:
+        description: Units
+        type: string
+      anId:
+        type: string
+      orderId:
+        type: string
+      paymentPurpose:
+        type: string
+      qrcId:
+        type: string
+      requestId:
+        type: string
+      senderBank:
+        type: string
+      senderInn:
+        type: string
+      senderName:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+      trxId:
+        type: string
+    type: object
+  api.SBPCallbackResponse:
+    type: object
+  api.SaveInvoiceURLRequest:
+    properties:
+      billDate:
+        type: string
+      billNumber:
+        type: number
+      guid:
+        type: string
+      url:
+        type: string
+    type: object
+  api.SaveInvoiceURLResponse:
+    type: object
+  api.TransactionEntity:
+    properties:
+      amount:
+        type: string
+      clientGUID:
+        type: string
+      clientID:
+        type: string
+      createdAt:
+        type: string
+      createdBy:
+        type: string
+      id:
+        type: string
+      invoiceURL:
+        type: string
+      name:
+        type: string
+      number:
+        type: integer
+      paymentMethod:
+        type: string
+      status:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  api.TransactionsResponse:
+    properties:
+      totalCount:
+        type: integer
+      transactions:
+        items:
+          $ref: '#/definitions/api.TransactionEntity'
+        type: array
+    type: object
+  entity.CardPayment:
+    properties:
+      link:
+        type: string
+      orderID:
+        type: string
+    type: object
+  entity.ClientRequisites:
+    properties:
+      address:
+        type: string
+      bankAccountNumber:
+        type: string
+      bankBic:
+        type: string
+      bankCorrespondentAccount:
+        type: string
+      bankName:
+        type: string
+      inn:
+        type: string
+      kpp:
+        type: string
+      name:
+        type: string
+    type: object
+  entity.Image:
+    properties:
+      content:
+        type: string
+      mediaType:
+        type: string
+    type: object
+  entity.SPBLink:
+    properties:
+      image:
+        $ref: '#/definitions/entity.Image'
+      orderId:
+        type: string
+      payload:
+        type: string
+      qrcId:
+        type: string
+      requestId:
+        type: string
+      status:
+        $ref: '#/definitions/entity.SPBPaymentStatus'
+    type: object
+  entity.SPBPaymentStatus:
+    enum:
+    - NTST
+    - RCVD
+    - ACWP
+    - RJCT
+    type: string
+    x-enum-varnames:
+    - SPBPaymentStatusNotStarted
+    - SPBPaymentStatusStarted
+    - SPBPaymentStatusPaid
+    - SPBPaymentStatusRejected
+info:
+  contact: {}
+  description: This is an API for user payments to increase their balance
+  title: Payment API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      consumes:
+      - text/plain
+      description: Health check
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Сервис работает!
+          schema:
+            type: string
+      summary: Health check
+      tags:
+      - health
+  /payments/callbacks/card:
+    get:
+      consumes:
+      - application/json
+      description: Handles a payment callback for the specified transaction
+      parameters:
+      - description: Order TxID (UUID)
+        in: query
+        name: orderNumber
+        required: true
+        type: string
+      - description: Signature Alias
+        in: query
+        name: sign_alias
+        required: true
+        type: string
+      - description: Checksum (SHA512)
+        in: query
+        name: checksum
+        required: true
+        type: string
+      - description: MD Order ID
+        in: query
+        name: mdOrder
+        required: true
+        type: string
+      - description: Operation Type
+        in: query
+        name: operation
+        required: true
+        type: string
+      - description: Transaction Status
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Callback обработан успешно
+          schema:
+            $ref: '#/definitions/api.CardPaymentCallbackResponse'
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Проверка контрольной суммы не пройдена
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Ошибка обработки запроса
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Handle payment callback
+      tags:
+      - payments
+  /payments/callbacks/sbp:
+    post:
+      consumes:
+      - application/json
+      description: Callback to update the SPB payment status after payment
+      parameters:
+      - description: Invoice callback request
+        in: body
+        name: SBPCallbackRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.SBPCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SBPCallbackResponse'
+        "400":
+          description: invalid json
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: payment not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Handle SPB callback
+      tags:
+      - payments
+  /payments/card:
+    post:
+      consumes:
+      - application/json
+      description: Creates a card payment for the specified amount
+      parameters:
+      - description: Card payment creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateCardPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.CreateCardPaymentResponse'
+        "400":
+          description: Невалидное тело запроса
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "422":
+          description: Сумма должна быть отрицательной
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Не удалось создать платёж
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create card payment
+      tags:
+      - payments
+  /payments/invoices:
+    post:
+      consumes:
+      - application/json
+      description: Creates a bill invoice to increase user balance
+      parameters:
+      - description: Invoice creation request
+        in: body
+        name: CreateInvoiceRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateInvoiceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.CreateInvoiceResponse'
+        "400":
+          description: Client not approved
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Action forbidden for user
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Client not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "422":
+          description: Amount must be positive
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Failed to create invoice
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create invoice
+      tags:
+      - payments
+  /payments/invoices/{txId}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the invoice URL associated with a transaction ID
+      parameters:
+      - description: Transaction ID (UUID)
+        in: path
+        name: txId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InvoiceURLResponse'
+        "400":
+          description: '''txId'' должен быть UUID'
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Транзакция не найдена
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get invoice URL
+      tags:
+      - invoices
+  /payments/spb:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Запрос на создание СПБ-ссылки
+        in: body
+        name: CreateSPBLinkRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateSPBLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ссылка успешно создана
+          schema:
+            $ref: '#/definitions/api.CreateSPBLinkResponse'
+        "400":
+          description: Невалидное тело запроса
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "422":
+          description: Сумма должна быть положительной
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Не удалось создать СПБ-ссылку
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать ссылку на оплату через СПБ
+      tags:
+      - payments
+  /payments/transactions/{client_id}:
+    get:
+      consumes:
+      - application/json
+      description: Позволяет получить список транзакций для клиента по его уникальному
+        идентификатору с поддержкой фильтрации, сортировки и пагинации
+      parameters:
+      - description: Идентификатор клиента
+        in: path
+        name: client_id
+        required: true
+        type: string
+      - description: Фильтр по идентификатору транзакции
+        in: query
+        name: id
+        type: string
+      - description: Фильтр по сумме транзакции
+        in: query
+        name: amount
+        type: string
+      - description: 'Фильтр по дате создания транзакции (формат: YYYY-MM-DD)'
+        in: query
+        name: createdAt
+        type: string
+      - description: Лимит количества транзакций на странице (по умолчанию 10)
+        in: query
+        name: limit
+        type: integer
+      - description: Номер страницы для пагинации (по умолчанию 1)
+        in: query
+        name: page
+        type: integer
+      - description: 'Поле для сортировки (доступны: id, amount, createdAt)'
+        in: query
+        name: sortBy
+        type: string
+      - description: Порядок сортировки (asc для возрастания, desc для убывания)
+        in: query
+        name: orderBy
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: История транзакций клиента
+          schema:
+            $ref: '#/definitions/api.TransactionsResponse'
+        "400":
+          description: Невалидное тело запроса
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Не удалось получить историю транзакций
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Получение истории транзакций клиента
+      tags:
+      - payments
+  /private/v1/onec/invoice:
+    post:
+      consumes:
+      - application/json
+      description: Callback to update the invoice status after payment
+      parameters:
+      - description: Invoice callback request
+        in: body
+        name: InvoiceCallbackRequest
+        required: true
+        schema:
+          $ref: '#/definitions/api.InvoiceCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InvoiceCallbackResponse'
+        "400":
+          description: Invalid GUID or invalid input data
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Invoice not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Failed to update invoice
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - APIKeyAuth: []
+      summary: Update invoice
+      tags:
+      - payments
+  /private/v1/onec/invoice/file:
+    post:
+      consumes:
+      - application/json
+      description: Saves the invoice URL with the specified bill number and GUID
+      parameters:
+      - description: Invoice URL save request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.SaveInvoiceURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SaveInvoiceURLResponse'
+        "400":
+          description: Невалидное тело запроса
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Не удалось сохранить ссылку
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Save invoice URL
+      tags:
+      - invoices
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-Api-Key
+    type: apiKey
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,81 @@
+variables:
+    GROUP_NAME: $CI_PROJECT_PATH_SLUG-$CI_COMMIT_REF_SLUG
+    API_HOST: auth-$CI_ENVIRONMENT_SLUG.$REVIEW_HOST
+include:
+    - project: 'templates/ci-cd'
+      ref: master
+      file:
+      - 'main.yml'
+      - 'qa/qa-gitlab-ci.yml'
+
+run-linter:
+  stage: Linting
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golangci/golangci-lint:v1.61.0-alpine
+  tags:
+    - build-docker
+  script:
+    - cd app && golangci-lint run -v ./...
+
+run-tests:
+  stage: Autotesting
+  image: golang:1.23
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  tags:
+    - build-docker
+  services:
+    - postgres:16.3-alpine
+  variables:
+    TEST_POSTGRES_DSN: postgres://postgres:dev@postgres:5432/postgres?sslmode=disable
+    TZ: UTC
+    POSTGRES_PASSWORD: dev
+  before_script:
+    - cp -f $ENVS ./app/.env
+    - go install github.com/pressly/goose/v3/cmd/goose@latest
+    - goose -dir ./app/migrations postgres "$TEST_POSTGRES_DSN" up
+  script:
+      - cd app && CGO_ENABLED=1 go test -v -race ./...
+  after_script:
+    - rm -f ./app/.env
+
+run-build:
+  stage: Build
+  image: golang:1.23
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  tags:
+    - build-docker
+  script:
+    - cd app && go build ./cmd/main.go
+
+deploy-for-stable-dev:
+  stage: Staging
+  environment:
+    name: stable-dev
+    url: https://gateway.blago.dev.buroburo.tech/auth
+    auto_stop_in: 1 day
+  tags:
+    - blago_stable_dev_shell
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^(release|epic|hotfix|infr).*$/'
+      when: manual
+    - if: '$CI_COMMIT_BRANCH =~ /^(develop|release).*$/'
+      when: always
+      allow_failure: true
+    - if: '$CI_COMMIT_BRANCH =~ /^(infr|feature|fix|hotfix|epic).*$/'
+      when: manual
+      allow_failure: true
+    - when: never
+  before_script:
+    - cp -f $ENVS $SERVICE_DIR/envs/auth.env
+  script:
+    - cd docker
+    - docker build -f ./Dockerfile -t blago-auth-dev:latest ..
+    - docker stop blago-auth-dev || true
+    - docker rm blago-auth-dev || true
+    - docker run -p 0.0.0.0:38410:8080 -d --env-file=$SERVICE_DIR/envs/auth.env -v $SERVICE_DIR/certs:/app/certs --name blago-auth-dev --network microservices_kong-net --restart=always blago-auth-dev:latest

@@ -1,0 +1,22 @@
+name: !reset null
+services:
+  pg:
+    container_name: !reset null
+    ports: !reset []
+    networks: 
+      - blago-auth
+  auth:
+    container_name: !reset null
+    ports: !override
+      - "${PORT}:8081"
+    networks: 
+      - blago-auth
+    environment:
+      - TLS_SERVER_CERT=/app/certs/server.crt
+      - TLS_SERVER_KEY=/app/certs/server.key
+      - TLS_CA_CERT=/app/certs/ca.crt
+    volumes:
+      - ../app/certs:/app/certs:ro
+
+networks: 
+  blago-auth:

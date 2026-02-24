@@ -1,0 +1,88 @@
+include:
+  - project: "templates/ci-cd"
+    ref: master
+    file: "main.yml"
+
+run-linter:
+  stage: Linting
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golangci/golangci-lint:v1.61.0-alpine
+  tags:
+    - build-docker
+  script:
+    - cd app && golangci-lint run -v
+
+run-tests:
+  stage: Autotesting
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golang:1.23
+  tags:
+    - build-docker
+  services:
+    - postgres:16.3-alpine
+  variables:
+    TEST_POSTGRES_DSN: postgres://postgres:dev@postgres:5432/postgres?sslmode=disable
+    TZ: UTC
+    POSTGRES_PASSWORD: dev
+  before_script:
+    - cp -f $ENVS ./app/.env
+    - go install github.com/pressly/goose/v3/cmd/goose@latest
+    - goose -timeout 15s -dir ./app/migrations postgres "$TEST_POSTGRES_DSN" up
+  script: |
+    cd app && go test -race -coverprofile=cover.out -coverpkg="$(
+          go list ./... | \
+            grep -v /cmd | \
+            grep -v /internal/mocks | \
+            grep -v /internal/api/gen | \
+            grep -v /internal/clients | \
+            grep -v /pkg | \
+            grep -v /docs | \
+            paste -s -d ',' -
+        )" ./...
+        go tool cover -func=cover.out
+  coverage: '/total:\s+\(statements\)\s+(\d+.\d+)/'
+  after_script:
+    - rm -f ./app/.env
+
+run-build:
+  stage: Build
+  environment:
+    name: tests
+    auto_stop_in: 1 day
+  image: golang:1.23
+  tags:
+    - build-docker
+  script:
+    - cd app && go build ./cmd/main.go
+
+Deploy for stable dev:
+  stage: Staging
+  environment:
+    name: stable-dev
+    url: https://gateway.russ.dev.buroburo.tech/payment
+    auto_stop_in: 1 day
+  tags:
+    - russ_stable_dev_runner
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^(release|epic|hotfix|infr).*$/'
+      when: never
+    - if: "$CI_COMMIT_BRANCH =~ /^(develop|release).*$/"
+      when: always
+      allow_failure: true
+    - if: "$CI_COMMIT_BRANCH =~ /^(infr|feature|fix|hotfix|epic).*$/"
+      when: manual
+      allow_failure: true
+    - when: never
+  before_script:
+    - cp -f $ENVS $ENVS_DIR/payment.env
+  script:
+    - cd docker
+    - docker build -f ./Dockerfile -t russ-payment-dev:latest ..
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker stop russ-payment-dev || true
+    - docker rm russ-payment-dev || true
+    - docker run -p 0.0.0.0:38460:8080 -d --env-file=$ENVS_DIR/payment.env --name russ-payment-dev --network russ-microservices_kong-net --restart=always russ-payment-dev:latest

@@ -1,0 +1,450 @@
+definitions:
+  api.CheckCodeRequest:
+    properties:
+      OTP:
+        type: string
+      email:
+        type: string
+    type: object
+  api.CheckCodeResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  api.DestroyTokenInternalRequest:
+    properties:
+      user_id:
+        type: string
+    type: object
+  api.DestroyTokenInternalResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  api.DestroyTokenRequest:
+    properties:
+      session_token:
+        type: string
+    type: object
+  api.DestroyTokenResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  api.OpenIDCodeRequest:
+    properties:
+      code:
+        type: string
+    type: object
+  api.OpenIDCodeResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  api.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  api.RefreshTokenResponse:
+    properties:
+      accessToken:
+        type: string
+      message:
+        type: string
+    type: object
+  api.ResponseError:
+    properties:
+      blocked_to:
+        type: string
+      message:
+        type: string
+    type: object
+  api.SberIDConfigResponse:
+    properties:
+      base_url:
+        type: string
+      client_id:
+        type: string
+      redirect_uri:
+        type: string
+      scope:
+        type: string
+    type: object
+  api.SendCodeRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      newsletter_agreed:
+        type: boolean
+      privacy_policy_agreed:
+        type: boolean
+      public_donations_agreed:
+        type: boolean
+    type: object
+  api.SendCodeResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  api.UpdateEmailSelectionRequest:
+    properties:
+      email:
+        type: string
+      user_id:
+        type: string
+    type: object
+  api.UpdateEmailSelectionResponse:
+    properties:
+      accessToken:
+        type: string
+      refreshToken:
+        type: string
+    type: object
+  api.ValidateTokenRequest:
+    properties:
+      access_token:
+        type: string
+    type: object
+  api.ValidateTokenResponse:
+    properties:
+      user_id:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/code/check:
+    post:
+      consumes:
+      - application/json
+      description: Проверка кода подтверждения для авторизации. Возвращает access
+        token.
+      parameters:
+      - description: Email и код для проверки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CheckCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токен успешно получен
+          schema:
+            $ref: '#/definitions/api.CheckCodeResponse'
+        "401":
+          description: Неверный или просроченный код
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "423":
+          description: Блокировка
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "429":
+          description: Слишком много попыток
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Не удалось проверить код
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Проверить код подтверждения
+      tags:
+      - auth
+  /api/code/send:
+    post:
+      consumes:
+      - application/json
+      description: Отправка кода подтверждения на email. Если переданы first_name
+        и last_name - это регистрация, иначе - авторизация.
+      parameters:
+      - description: Email для отправки кода (и опционально имя/фамилия для регистрации)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.SendCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Код отправлен
+          schema:
+            $ref: '#/definitions/api.SendCodeResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "410":
+          description: Аккаунт удалён
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "423":
+          description: Блокировка
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "429":
+          description: Слишком много запросов
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Не удалось отправить код
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Отправить код подтверждения
+      tags:
+      - auth
+  /api/email/update:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет email пользователя после выбора и возвращает токены авторизации
+      parameters:
+      - description: Выбранный email и идентификаторы Sber ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateEmailSelectionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            $ref: '#/definitions/api.UpdateEmailSelectionResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "401":
+          description: Сессия истекла
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "410":
+          description: Аккаунт удалён
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "423":
+          description: Аккаунт заблокирован
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Обновить email и авторизовать пользователя
+      tags:
+      - auth
+  /api/health:
+    get:
+      consumes:
+      - application/json
+      description: Проверяет, что сервер работает
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Сервер работает!
+          schema:
+            type: string
+      summary: Проверка состояния сервиса
+      tags:
+      - auth
+  /api/openid/code:
+    post:
+      consumes:
+      - application/json
+      description: Обмен кода авторизации на токены и регистрация/привязка пользователя
+      parameters:
+      - description: Код авторизации от Sber ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.OpenIDCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная регистрация/авторизация
+          schema:
+            $ref: '#/definitions/api.OpenIDCodeResponse'
+        "400":
+          description: Некорректный запрос
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "401":
+          description: Неверный код авторизации
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "410":
+          description: Аккаунт удалён
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "423":
+          description: Аккаунт заблокирован
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Получение кода авторизации от OpenID провайдера (Sber ID)
+      tags:
+      - auth
+  /api/sberid/config:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает конфигурацию для OAuth авторизации через Sber ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SberIDConfigResponse'
+      summary: Получить конфигурацию Sber ID
+      tags:
+      - auth
+  /api/token/destroy:
+    post:
+      consumes:
+      - application/json
+      description: Удаляет refresh token пользователя, делая его сессию невалидной
+      parameters:
+      - description: Session token (access token) для определения пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.DestroyTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токен успешно удален
+          schema:
+            $ref: '#/definitions/api.DestroyTokenResponse'
+        "401":
+          description: Токен невалидный
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Не удалось удалить токен
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Удаление/инвалидация токена авторизации
+      tags:
+      - auth
+  /api/token/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет access token используя refresh token
+      parameters:
+      - description: Refresh token для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токены успешно обновлены
+          schema:
+            $ref: '#/definitions/api.RefreshTokenResponse'
+        "401":
+          description: Токен обновления не передан
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Не удалось обновить токен
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Обновление токена авторизации
+      tags:
+      - auth
+  /api/token/validate:
+    post:
+      consumes:
+      - application/json
+      description: Проверка валидности access token и получение user_id
+      parameters:
+      - description: Access token для валидации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ValidateTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токен валиден
+          schema:
+            $ref: '#/definitions/api.ValidateTokenResponse'
+        "401":
+          description: Токен невалидный
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Не удалось проверить токен
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Валидация токена авторизации
+      tags:
+      - auth
+  /internal/api/token/destroy:
+    post:
+      consumes:
+      - application/json
+      description: Internal endpoint для межсервисного взаимодействия. Удаляет все
+        refresh токены пользователя по его ID
+      parameters:
+      - description: User ID для удаления токенов
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.DestroyTokenInternalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токены успешно удалены
+          schema:
+            $ref: '#/definitions/api.DestroyTokenInternalResponse'
+        "400":
+          description: Некорректный запрос или невалидный UUID
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Не удалось удалить токены
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Удаление токенов пользователя (internal)
+      tags:
+      - internal
+swagger: "2.0"

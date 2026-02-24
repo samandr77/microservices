@@ -1,0 +1,78 @@
+run:
+  go: "1.23"
+  concurrency: 4
+  issues-exit-code: 1
+  tests: true
+  modules-download-mode: mod
+  allow-parallel-runners: true
+  timeout: 5m
+output:
+  path-prefix: ./app
+
+linters:
+  enable-all: true
+  disable:
+    - exportloopref
+    - execinquery
+    - gomnd
+    - exhaustruct
+    - nonamedreturns
+    - wrapcheck
+    - gofumpt
+    - gci
+    - tagliatelle
+    - musttag
+    - varnamelen
+    - nlreturn
+    - err113
+    - godot
+    - tagalign
+    - depguard
+    - gochecknoglobals
+    - revive
+
+linters-settings:
+  wsl:
+    allow-cuddle-with-calls:
+      - "SendJSONErr"
+      - "SendJSON"
+      - "With"
+      - "Info"
+      - "Infof"
+      - "Error"
+      - "Errorf"
+    allow-cuddle-with-rhs:
+      - "SendJSONErr"
+      - "SendJSON"
+      - "With"
+      - "Info"
+      - "Infof"
+      - "Error"
+      - "Errorf"
+  gosec:
+    excludes:
+      - G401
+      - G505
+      - G306
+  misspell:
+    ignore-words:
+      - sub_payed
+  whitespace:
+    multi-if: true
+    multi-func: false
+  lll:
+    line-length: 140
+  funlen:
+    lines: 100
+    ignore-comments: true
+    statements: 50
+  errcheck:
+    exclude-functions:
+      - (github.com/jackc/pgx/v5.Tx).Rollback
+  cyclop:
+    max-complexity: 11
+issues:
+  exclude-rules:
+    - linters:
+        - lll
+      source: ".*// "
